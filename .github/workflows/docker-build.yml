@@ -54,10 +54,12 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Generate artifact attestation
-      if: github.event_name != 'pull_request'
-      uses: actions/attest-build-provenance@v1
-      with:
-        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-        subject-digest: ${{ steps.push.outputs.digest }}
-        push-to-registry: true
+    # Optional: Generate artifact attestation (requires ID token permissions)
+    # Uncomment the following block if you have ID token permissions enabled
+    # - name: Generate artifact attestation
+    #   if: github.event_name != 'pull_request'
+    #   uses: actions/attest-build-provenance@v1
+    #   with:
+    #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+    #     subject-digest: ${{ steps.push.outputs.digest }}
+    #     push-to-registry: true
