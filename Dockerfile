@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     tcl8.6-dev \
     tk8.6-dev \
     python3-tk \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
