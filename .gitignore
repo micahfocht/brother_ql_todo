@@ -49,7 +49,7 @@ Thumbs.db
 
 # Application specific
 printer_settings.json
-label_to_print.png
+*.png
 *.log
 
 # Docker
