@@ -22,10 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY main.py .
-COPY printer_settings.json* ./
-
-# Create directory for label files
-RUN mkdir -p /app && chmod 755 /app
 
 # Expose port
 EXPOSE 5000
@@ -35,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["python3", "main.py"]
