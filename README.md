@@ -16,14 +16,14 @@ A Flask web application for generating and printing to-do labels using Brother Q
 
 1. **Pull the Docker image**:
    ```bash
-   docker pull ghcr.io/yourusername/brother-label-printer:latest
+   docker pull ghcr.io/micahfocht/brother_ql_todo:latest
    ```
 
 2. **Run the container**:
    ```bash
    docker run -d -p 5000:5000 \
      -v $(pwd)/printer_settings.json:/app/printer_settings.json \
-     ghcr.io/yourusername/brother-label-printer:latest
+     ghcr.io/micahfocht/brother_ql_todo:latest
    ```
 
 3. **Access the application**:
@@ -64,10 +64,10 @@ A Flask web application for generating and printing to-do labels using Brother Q
 
 ```bash
 # Build the image
-docker build -t brother-label-printer .
+docker build -t brother_ql_todo .
 
 # Run the container
-docker run -d -p 5000:5000 brother-label-printer
+docker run -d -p 5000:5000 brother_ql_todo
 ```
 
 ### Using Docker Compose
@@ -78,7 +78,7 @@ Create a `docker-compose.yml` file:
 version: '3.8'
 services:
   label-printer:
-    image: ghcr.io/yourusername/brother-label-printer:latest
+    image: ghcr.io/micahfocht/brother_ql_todo:latest
     ports:
       - "5000:5000"
     volumes:

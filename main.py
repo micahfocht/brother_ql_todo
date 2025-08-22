@@ -18,6 +18,12 @@ def load_settings():
                 return json.load(f)
         except:
             pass
+    if os.path.exists("/app/" +SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
     return {'printer_ip': '', 'printer_model': ''}
 
 def is_printer_configured():
