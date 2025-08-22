@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  label-printer:
+    image: ghcr.io/yourusername/brother-label-printer:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./printer_settings.json:/app/printer_settings.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - FLASK_ENV=production
