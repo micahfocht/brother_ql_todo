@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   label-printer:
-    image: ghcr.io/yourusername/brother-label-printer:latest
+    image: ghcr.io/micahfocht/brother_ql_todo:latest
     ports:
       - "5000:5000"
     volumes:
@@ -12,5 +12,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    environment:
-      - FLASK_ENV=production
