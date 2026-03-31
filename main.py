@@ -10,21 +10,38 @@ app = Flask(__name__)
 # Settings file path
 SETTINGS_FILE = 'printer_settings.json'
 
+# Supported endless label types with their printable widths in pixels
+ENDLESS_LABELS = {
+    '12':  {'name': '12mm endless',  'width': 106},
+    '29':  {'name': '29mm endless',  'width': 306},
+    '38':  {'name': '38mm endless',  'width': 413},
+    '50':  {'name': '50mm endless',  'width': 554},
+    '54':  {'name': '54mm endless',  'width': 590},
+    '62':  {'name': '62mm endless',  'width': 696},
+    '102': {'name': '102mm endless', 'width': 1164},
+    '103': {'name': '103mm endless', 'width': 1200},
+}
+
 def load_settings():
     """Load printer settings from file"""
+    settings = None
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, 'r') as f:
-                return json.load(f)
+                settings = json.load(f)
         except:
             pass
-    if os.path.exists("/app/" +SETTINGS_FILE):
+    if settings is None and os.path.exists("/app/" + SETTINGS_FILE):
         try:
-            with open(SETTINGS_FILE, 'r') as f:
-                return json.load(f)
+            with open("/app/" + SETTINGS_FILE, 'r') as f:
+                settings = json.load(f)
         except:
             pass
-    return {'printer_ip': '', 'printer_model': ''}
+    if settings is None:
+        settings = {'printer_ip': '', 'printer_model': '', 'label_type': '62'}
+    # Ensure label_type exists for backward compatibility
+    settings.setdefault('label_type', '62')
+    return settings
 
 def is_printer_configured():
     """Check if printer is properly configured"""
@@ -510,6 +527,30 @@ SETTINGS_HTML = """
       transform: translateY(-1px);
     }
 
+    select {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 1em;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      background: #fff;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
     input[type="submit"] {
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
@@ -622,6 +663,10 @@ SETTINGS_HTML = """
           <span class="setting-label">Printer Model:</span>
           <span class="setting-value">{{ printer_model }}</span>
         </div>
+        <div class="setting-item">
+          <span class="setting-label">Label Type:</span>
+          <span class="setting-value">{{ endless_labels[label_type]['name'] }}</span>
+        </div>
       </div>
     {% endif %}
 
@@ -631,6 +676,15 @@ SETTINGS_HTML = """
 
       <label for="printer_model">Printer Model</label>
       <input type="text" name="printer_model" id="printer_model" value="{{ printer_model }}" placeholder="QL-810W" required>
+
+      <label for="label_type">Label Type (Stock)</label>
+      <select name="label_type" id="label_type" required>
+        {% for key, label_info in endless_labels.items() %}
+          <option value="{{ key }}" {% if key == label_type %}selected{% endif %}>
+            {{ label_info['name'] }} ({{ label_info['width'] }}px wide)
+          </option>
+        {% endfor %}
+      </select>
 
       <input type="submit" value="Save Settings">
     </form>
@@ -985,6 +1039,7 @@ def settings():
     if request.method == 'POST':
         settings_data['printer_ip'] = request.form['printer_ip']
         settings_data['printer_model'] = request.form['printer_model']
+        settings_data['label_type'] = request.form['label_type']
         save_settings(settings_data)
         saved = True
 
@@ -992,6 +1047,8 @@ def settings():
         SETTINGS_HTML,
         printer_ip=settings_data['printer_ip'],
         printer_model=settings_data['printer_model'],
+        label_type=settings_data.get('label_type', '62'),
+        endless_labels=ENDLESS_LABELS,
         saved=saved
     )
 
@@ -1001,9 +1058,15 @@ def label_png():
     label_title = request.args.get('label_title', '')
     label_description = request.args.get('label_description', '')
 
+    # Get configured label width for accurate preview
+    settings_data = load_settings()
+    label_type = settings_data.get('label_type', '62')
+    label_width = ENDLESS_LABELS.get(label_type, ENDLESS_LABELS['62'])['width']
+
     try:
         img = create_todo_image(
             task,
+            width=label_width,
             label_title=label_title,
             label_description=label_description
         )
@@ -1036,8 +1099,13 @@ def print_label():
         if not settings_data.get('printer_model', '').strip():
             return jsonify({"status": "error", "message": "Printer model not configured. Please go to Settings to configure your printer."}), 400
 
+        # Get label type and corresponding width
+        label_type = settings_data.get('label_type', '62')
+        label_width = ENDLESS_LABELS.get(label_type, ENDLESS_LABELS['62'])['width']
+
         img = create_todo_image(
             task,
+            width=label_width,
             label_title=label_title,
             label_description=label_description
         )
@@ -1056,7 +1124,7 @@ def print_label():
         instructions = convert(
             qlr=qlr,
             images=["label_to_print.png"],
-            label='62',
+            label=label_type,
             rotate='auto',  # or 0, 90, 180, 270
             threshold=70.0,  # Adjust if needed
             dither=True,
