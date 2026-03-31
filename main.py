@@ -38,9 +38,10 @@ def load_settings():
         except:
             pass
     if settings is None:
-        settings = {'printer_ip': '', 'printer_model': '', 'label_type': '62'}
-    # Ensure label_type exists for backward compatibility
+        settings = {'printer_ip': '', 'printer_model': '', 'label_type': '62', 'label_color': 'black_white'}
+    # Ensure keys exist for backward compatibility
     settings.setdefault('label_type', '62')
+    settings.setdefault('label_color', 'black_white')
     return settings
 
 def is_printer_configured():
@@ -667,6 +668,10 @@ SETTINGS_HTML = """
           <span class="setting-label">Label Type:</span>
           <span class="setting-value">{{ endless_labels[label_type]['name'] }}</span>
         </div>
+        <div class="setting-item">
+          <span class="setting-label">Label Color:</span>
+          <span class="setting-value">{{ 'Black &amp; Red' if label_color == 'black_red' else 'Black &amp; White' }}</span>
+        </div>
       </div>
     {% endif %}
 
@@ -684,6 +689,12 @@ SETTINGS_HTML = """
             {{ label_info['name'] }} ({{ label_info['width'] }}px wide)
           </option>
         {% endfor %}
+      </select>
+
+      <label for="label_color">Label Color</label>
+      <select name="label_color" id="label_color" required>
+        <option value="black_white" {% if label_color == 'black_white' %}selected{% endif %}>Black &amp; White</option>
+        <option value="black_red" {% if label_color == 'black_red' %}selected{% endif %}>Black &amp; Red (DK-22251, QL-8xx series)</option>
       </select>
 
       <input type="submit" value="Save Settings">
@@ -1040,6 +1051,7 @@ def settings():
         settings_data['printer_ip'] = request.form['printer_ip']
         settings_data['printer_model'] = request.form['printer_model']
         settings_data['label_type'] = request.form['label_type']
+        settings_data['label_color'] = request.form['label_color']
         save_settings(settings_data)
         saved = True
 
@@ -1048,6 +1060,7 @@ def settings():
         printer_ip=settings_data['printer_ip'],
         printer_model=settings_data['printer_model'],
         label_type=settings_data.get('label_type', '62'),
+        label_color=settings_data.get('label_color', 'black_white'),
         endless_labels=ENDLESS_LABELS,
         saved=saved
     )
@@ -1102,6 +1115,7 @@ def print_label():
         # Get label type and corresponding width
         label_type = settings_data.get('label_type', '62')
         label_width = ENDLESS_LABELS.get(label_type, ENDLESS_LABELS['62'])['width']
+        use_red = settings_data.get('label_color', 'black_white') == 'black_red'
 
         img = create_todo_image(
             task,
@@ -1129,7 +1143,7 @@ def print_label():
             threshold=70.0,  # Adjust if needed
             dither=True,
             compress=True,
-            red=True,  # For two-color printers
+            red=use_red,  # True for black/red DK-22251 labels (QL-8xx series)
             dpi_600=False,
             hq=True,
             cut=True
